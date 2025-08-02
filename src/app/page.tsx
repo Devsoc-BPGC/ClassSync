@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { useSession, signOut } from 'next-auth/react';
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { signOut } from 'next-auth/react';
 import FileUpload from '../components/FileUpload';
 import TimetableDisplay from '../components/TimetableDisplay';
 import ErrorMessage from '../components/ErrorMessage';
@@ -24,6 +25,11 @@ export default function Home() {
   const [timetableData, setTimetableData] = useState<ClassSession[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  useEffect(() => {
+    setIsInitialized(true);
+  }, []);
 
   const handleFileUpload = async (file: File) => {
     setIsLoading(true);
@@ -32,6 +38,19 @@ export default function Home() {
     setTimetableData(null);
 
     try {
+      if (file.size === 0) {
+        throw new Error('File is empty');
+      }
+
+      if (file.size > 10 * 1024 * 1024) {
+        throw new Error('File size exceeds 10MB limit');
+      }
+
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+      if (!allowedTypes.includes(file.type)) {
+        throw new Error('Invalid file type. Please upload a JPG or PNG image file.');
+      }
+
       const formData = new FormData();
       formData.append('file', file);
 
@@ -43,11 +62,35 @@ export default function Home() {
       const result = await response.json();
 
       if (!response.ok) {
+        if (response.status === 429) {
+          throw new Error('Rate limit exceeded. Please wait a moment and try again.');
+        }
         throw new Error(result.error || 'Failed to process timetable');
       }
 
       if (result.success) {
-        setTimetableData(result.data);
+        if (!result.data || !Array.isArray(result.data)) {
+          throw new Error('Invalid data received from server');
+        }
+
+        const validData = result.data.filter((classSession: any) => {
+          return classSession && 
+                 typeof classSession === 'object' &&
+                 classSession.day &&
+                 classSession.start_time &&
+                 classSession.end_time &&
+                 classSession.course_code &&
+                 classSession.course_name &&
+                 classSession.class_type &&
+                 classSession.location &&
+                 classSession.instructor;
+        });
+
+        if (validData.length === 0) {
+          throw new Error('No valid class data found in the image. Please try with a clearer image.');
+        }
+
+        setTimetableData(validData);
       } else {
         throw new Error(result.error || 'Failed to process timetable');
       }
@@ -68,6 +111,18 @@ export default function Home() {
     setTimetableData(null);
   };
 
+  const handleSignOut = async () => {
+    try {
+      await signOut({ callbackUrl: '/auth/signin' });
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+  if (!isInitialized) {
+    return null;
+  }
+
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
@@ -77,7 +132,7 @@ export default function Home() {
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                   </div>
@@ -105,7 +160,7 @@ export default function Home() {
                     </span>
                   </div>
                   <button
-                    onClick={() => signOut({ callbackUrl: '/auth/signin' })}
+                    onClick={handleSignOut}
                     className="px-3 py-1.5 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-200 border border-gray-200/50 dark:border-gray-600/50 rounded-lg hover:bg-white/50 dark:hover:bg-gray-800/50 backdrop-blur-sm hover:shadow-md"
                   >
                     Sign Out
@@ -131,7 +186,7 @@ export default function Home() {
 
               <div className="max-w-2xl mx-auto bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20 dark:border-gray-700/50">
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-4 text-base flex items-center">
-                  <svg className="w-4 h-4 text-blue-600 dark:text-blue-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-blue-600 dark:text-blue-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   Before uploading, please ensure:
@@ -180,7 +235,7 @@ export default function Home() {
                   onClick={handleRetry}
                   className="inline-flex items-center px-6 py-3 border-2 border-gray-300/50 dark:border-gray-600/50 text-gray-700 dark:text-gray-300 bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 font-semibold rounded-xl transition-all duration-200 hover:shadow-lg backdrop-blur-sm hover-lift"
                 >
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
                   Upload Another Timetable

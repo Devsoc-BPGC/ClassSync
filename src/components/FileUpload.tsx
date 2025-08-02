@@ -8,21 +8,62 @@ interface FileUploadProps {
   isLoading?: boolean;
 }
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const ALLOWED_TYPES = {
+  'image/jpeg': ['.jpg', '.jpeg'],
+  'image/png': ['.png']
+};
+
 export default function FileUpload({ onFileUpload, isLoading = false }: FileUploadProps) {
   const [dragActive, setDragActive] = useState(false);
+  const [fileError, setFileError] = useState<string | null>(null);
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
+  const validateFile = (file: File): string | null => {
+    if (file.size > MAX_FILE_SIZE) {
+      return 'File size must be less than 10MB';
+    }
+    
+    if (!Object.keys(ALLOWED_TYPES).includes(file.type)) {
+      return 'Only JPG and PNG files are allowed';
+    }
+    
+    return null;
+  };
+
+  const onDrop = useCallback((acceptedFiles: File[], rejectedFiles: any[]) => {
+    setFileError(null);
+    
+    if (rejectedFiles.length > 0) {
+      const rejection = rejectedFiles[0];
+      if (rejection.errors.some((error: any) => error.code === 'file-too-large')) {
+        setFileError('File size must be less than 10MB');
+      } else if (rejection.errors.some((error: any) => error.code === 'file-invalid-type')) {
+        setFileError('Only JPG and PNG files are allowed');
+      } else {
+        setFileError('Invalid file. Please try again.');
+      }
+      return;
+    }
+
     if (acceptedFiles.length > 0) {
-      onFileUpload(acceptedFiles[0]);
+      const file = acceptedFiles[0];
+      const validationError = validateFile(file);
+      
+      if (validationError) {
+        setFileError(validationError);
+        return;
+      }
+      
+      onFileUpload(file);
     }
   }, [onFileUpload]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: {
-      'image/*': ['.jpg', '.jpeg', '.png']
-    },
-    multiple: false
+    accept: ALLOWED_TYPES,
+    multiple: false,
+    maxSize: MAX_FILE_SIZE,
+    disabled: isLoading
   });
 
   return (
@@ -37,12 +78,26 @@ export default function FileUpload({ onFileUpload, isLoading = false }: FileUplo
             : 'border-gray-300/50 dark:border-gray-600/50 hover:border-blue-400/50 dark:hover:border-blue-500/50 bg-white/80 dark:bg-gray-800/80'
           }
           ${isLoading ? 'opacity-50 cursor-not-allowed scale-100' : ''}
+          ${fileError ? 'border-red-300 bg-red-50/80 dark:bg-red-900/20' : ''}
           backdrop-blur-sm
         `}
         onDragEnter={() => setDragActive(true)}
         onDragLeave={() => setDragActive(false)}
+        role="button"
+        tabIndex={0}
+        aria-label="Upload timetable image"
+        aria-describedby={fileError ? "file-error" : undefined}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            if (!isLoading) {
+              const input = e.currentTarget.querySelector('input');
+              input?.click();
+            }
+          }
+        }}
       >
-        <input {...getInputProps()} disabled={isLoading} />
+        <input {...getInputProps()} disabled={isLoading} aria-hidden="true" />
         
         <div className="space-y-4">
           <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30 rounded-2xl flex items-center justify-center shadow-lg">
@@ -50,11 +105,14 @@ export default function FileUpload({ onFileUpload, isLoading = false }: FileUplo
               className={`w-8 h-8 transition-all duration-300 ${
                 isDragActive || dragActive 
                   ? 'text-blue-600 dark:text-blue-400 scale-110' 
+                  : fileError
+                  ? 'text-red-500 dark:text-red-400'
                   : 'text-gray-400 dark:text-gray-500'
               }`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
+              aria-hidden="true"
             >
               <path
                 strokeLinecap="round"
@@ -67,30 +125,40 @@ export default function FileUpload({ onFileUpload, isLoading = false }: FileUplo
           
           <div className="space-y-1">
             <p className="text-lg font-semibold text-gray-900 dark:text-white">
-              {isLoading ? 'Processing timetable...' : 'Upload your timetable'}
+              {isLoading ? 'Processing timetable...' : fileError ? 'Upload failed' : 'Upload your timetable'}
             </p>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              {isDragActive
+              {fileError 
+                ? fileError
+                : isDragActive
                 ? 'Drop your timetable image here'
                 : 'Drag and drop your timetable screenshot, or click to browse'
               }
             </p>
           </div>
           
-          {!isLoading && (
+          {!isLoading && !fileError && (
             <div className="flex items-center justify-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
               <div className="flex items-center space-x-1">
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span>JPG, PNG</span>
               </div>
               <div className="flex items-center space-x-1">
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
                 <span>Max 10MB</span>
               </div>
+            </div>
+          )}
+
+          {fileError && (
+            <div className="mt-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg">
+              <p className="text-sm text-red-700 dark:text-red-300" id="file-error">
+                {fileError}
+              </p>
             </div>
           )}
         </div>

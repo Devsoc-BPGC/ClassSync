@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 
 interface ClassSession {
@@ -29,6 +29,15 @@ const getClassTypeColor = (classType: string) => {
   return 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600';
 };
 
+function validateTimeFormat(timeStr: string): boolean {
+  const timeRegex = /^(0?[1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM)?$|^(0?[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/i;
+  return timeRegex.test(timeStr);
+}
+
+function sanitizeInput(input: string): string {
+  return input.trim().replace(/[<>]/g, '');
+}
+
 export default function TimetableDisplay({ data, onDataChange }: TimetableDisplayProps) {
   const { data: session } = useSession();
   const [editingClass, setEditingClass] = useState<string | null>(null);
@@ -49,6 +58,77 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
     location: '',
     instructor: ''
   });
+  const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
+
+  // Save data to localStorage for persistence
+  useEffect(() => {
+    if (data && data.length > 0) {
+      try {
+        localStorage.setItem('timetableData', JSON.stringify(data));
+      } catch (error) {
+        console.warn('Failed to save to localStorage:', error);
+      }
+    }
+  }, [data]);
+
+  // Load data from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedData = localStorage.getItem('timetableData');
+      if (savedData && onDataChange) {
+        const parsedData = JSON.parse(savedData);
+        if (Array.isArray(parsedData) && parsedData.length > 0) {
+          onDataChange(parsedData);
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to load from localStorage:', error);
+    }
+  }, [onDataChange]);
+
+  const validateClassData = (classData: Partial<ClassSession>): {[key: string]: string} => {
+    const errors: {[key: string]: string} = {};
+
+    if (!classData.course_code?.trim()) {
+      errors.course_code = 'Course code is required';
+    }
+
+    if (!classData.course_name?.trim()) {
+      errors.course_name = 'Course name is required';
+    }
+
+    if (!classData.start_time?.trim()) {
+      errors.start_time = 'Start time is required';
+    } else if (!validateTimeFormat(classData.start_time)) {
+      errors.start_time = 'Invalid time format (e.g., 9:00AM or 14:00)';
+    }
+
+    if (!classData.end_time?.trim()) {
+      errors.end_time = 'End time is required';
+    } else if (!validateTimeFormat(classData.end_time)) {
+      errors.end_time = 'Invalid time format (e.g., 9:50AM or 14:50)';
+    }
+
+    if (classData.start_time && classData.end_time && validateTimeFormat(classData.start_time) && validateTimeFormat(classData.end_time)) {
+      // Simple time comparison (this could be more sophisticated)
+      const startTime = classData.start_time.toLowerCase();
+      const endTime = classData.end_time.toLowerCase();
+      
+      if (startTime === endTime) {
+        errors.end_time = 'End time must be different from start time';
+      }
+    }
+
+    if (!classData.location?.trim()) {
+      errors.location = 'Location is required';
+    }
+
+    if (!classData.instructor?.trim()) {
+      errors.instructor = 'Instructor is required';
+    }
+
+    return errors;
+  };
 
   const classesByDay = days.map(day => ({
     day,
@@ -58,23 +138,42 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
   const handleEdit = (session: ClassSession, index: number) => {
     setEditingClass(`${session.day}-${index}`);
     setEditingData({ ...session });
+    setValidationErrors({});
   };
 
   const handleSave = (day: string, index: number) => {
     if (editingData && onDataChange) {
+      const errors = validateClassData(editingData);
+      if (Object.keys(errors).length > 0) {
+        setValidationErrors(errors);
+        return;
+      }
+
+      const sanitizedData: ClassSession = {
+        ...editingData,
+        course_code: sanitizeInput(editingData.course_code),
+        course_name: sanitizeInput(editingData.course_name),
+        location: sanitizeInput(editingData.location),
+        instructor: sanitizeInput(editingData.instructor),
+        start_time: editingData.start_time.trim(),
+        end_time: editingData.end_time.trim()
+      };
+
       const newData = [...data];
       const dayClasses = newData.filter(s => s.day === day);
       const globalIndex = newData.findIndex(s => s === dayClasses[index]);
-      newData[globalIndex] = editingData;
+      newData[globalIndex] = sanitizedData;
       onDataChange(newData);
     }
     setEditingClass(null);
     setEditingData(null);
+    setValidationErrors({});
   };
 
   const handleCancel = () => {
     setEditingClass(null);
     setEditingData(null);
+    setValidationErrors({});
   };
 
   const handleDelete = (day: string, index: number) => {
@@ -88,16 +187,22 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
   };
 
   const handleAdd = (day: string) => {
+    const errors = validateClassData(newClass);
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+
     if (newClass.course_code && newClass.start_time && newClass.end_time && onDataChange) {
       const classToAdd: ClassSession = {
         day,
-        start_time: newClass.start_time || '',
-        end_time: newClass.end_time || '',
-        course_code: newClass.course_code || '',
-        course_name: newClass.course_name || '',
+        start_time: newClass.start_time.trim(),
+        end_time: newClass.end_time.trim(),
+        course_code: sanitizeInput(newClass.course_code),
+        course_name: sanitizeInput(newClass.course_name || ''),
         class_type: newClass.class_type || 'Lecture',
-        location: newClass.location || '',
-        instructor: newClass.instructor || 'Staff'
+        location: sanitizeInput(newClass.location || ''),
+        instructor: sanitizeInput(newClass.instructor || 'Staff')
       };
       
       const newData = [...data, classToAdd];
@@ -112,6 +217,7 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
         instructor: ''
       });
       setShowAddForm(null);
+      setValidationErrors({});
     }
   };
 
@@ -126,6 +232,7 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
       location: '',
       instructor: ''
     });
+    setValidationErrors({});
   };
 
   const handleSyncToCalendar = async () => {
@@ -167,6 +274,35 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
     }
   };
 
+  const renderInputField = (
+    field: keyof ClassSession,
+    placeholder: string,
+    value: string,
+    onChange: (value: string) => void,
+    isRequired: boolean = true
+  ) => (
+    <div>
+      <input
+        type="text"
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={`w-full px-4 py-3 text-sm border rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+          validationErrors[field] 
+            ? 'border-red-300 dark:border-red-600' 
+            : 'border-gray-200 dark:border-gray-600'
+        }`}
+        aria-invalid={validationErrors[field] ? 'true' : 'false'}
+        aria-describedby={validationErrors[field] ? `${field}-error` : undefined}
+      />
+      {validationErrors[field] && (
+        <p className="mt-1 text-xs text-red-600 dark:text-red-400" id={`${field}-error`}>
+          {validationErrors[field]}
+        </p>
+      )}
+    </div>
+  );
+
   const renderClassCard = (session: ClassSession, day: string, index: number) => {
     const isEditing = editingClass === `${day}-${index}`;
     
@@ -175,36 +311,32 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
         <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-2 border-blue-300 dark:border-blue-600 rounded-2xl p-6 shadow-lg hover-lift">
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <input
-                type="text"
-                placeholder="Start Time"
-                value={editingData.start_time}
-                onChange={(e) => setEditingData({ ...editingData, start_time: e.target.value })}
-                className="px-4 py-3 text-sm border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              />
-              <input
-                type="text"
-                placeholder="End Time"
-                value={editingData.end_time}
-                onChange={(e) => setEditingData({ ...editingData, end_time: e.target.value })}
-                className="px-4 py-3 text-sm border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              />
+              {renderInputField(
+                'start_time',
+                'Start Time',
+                editingData.start_time,
+                (value) => setEditingData({ ...editingData, start_time: value })
+              )}
+              {renderInputField(
+                'end_time',
+                'End Time',
+                editingData.end_time,
+                (value) => setEditingData({ ...editingData, end_time: value })
+              )}
             </div>
             
-            <input
-              type="text"
-              placeholder="Course Code"
-              value={editingData.course_code}
-              onChange={(e) => setEditingData({ ...editingData, course_code: e.target.value })}
-              className="w-full px-4 py-3 text-sm border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-            />
-            <input
-              type="text"
-              placeholder="Course Name"
-              value={editingData.course_name}
-              onChange={(e) => setEditingData({ ...editingData, course_name: e.target.value })}
-              className="w-full px-4 py-3 text-sm border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-            />
+            {renderInputField(
+              'course_code',
+              'Course Code',
+              editingData.course_code,
+              (value) => setEditingData({ ...editingData, course_code: value })
+            )}
+            {renderInputField(
+              'course_name',
+              'Course Name',
+              editingData.course_name,
+              (value) => setEditingData({ ...editingData, course_name: value })
+            )}
             
             <select
               value={editingData.class_type}
@@ -217,20 +349,18 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
               <option value="Lab">Lab</option>
             </select>
             
-            <input
-              type="text"
-              placeholder="Location"
-              value={editingData.location}
-              onChange={(e) => setEditingData({ ...editingData, location: e.target.value })}
-              className="w-full px-4 py-3 text-sm border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-            />
-            <input
-              type="text"
-              placeholder="Instructor"
-              value={editingData.instructor}
-              onChange={(e) => setEditingData({ ...editingData, instructor: e.target.value })}
-              className="w-full px-4 py-3 text-sm border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-            />
+            {renderInputField(
+              'location',
+              'Location',
+              editingData.location,
+              (value) => setEditingData({ ...editingData, location: value })
+            )}
+            {renderInputField(
+              'instructor',
+              'Instructor',
+              editingData.instructor,
+              (value) => setEditingData({ ...editingData, instructor: value })
+            )}
             
             <div className="flex space-x-3 pt-2">
               <button
@@ -275,7 +405,7 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
           <div className="space-y-3">
             <div className="flex items-center space-x-3 text-sm text-gray-600 dark:text-gray-400">
               <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
@@ -284,7 +414,7 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
             </div>
             <div className="flex items-center space-x-3 text-sm text-gray-600 dark:text-gray-400">
               <div className="w-8 h-8 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center">
-                <svg className="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
@@ -299,7 +429,7 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
               onClick={() => handleEdit(session, index)}
               className="flex-1 px-4 py-3 bg-blue-50 hover:bg-blue-100 text-blue-700 text-sm font-medium rounded-xl transition-all duration-200 border border-blue-200 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 dark:text-blue-300 dark:border-blue-700 hover:shadow-md"
             >
-              <svg className="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
               </svg>
               Edit
@@ -308,7 +438,7 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
               onClick={() => handleDelete(day, index)}
               className="flex-1 px-4 py-3 bg-red-50 hover:bg-red-100 text-red-700 text-sm font-medium rounded-xl transition-all duration-200 border border-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 dark:text-red-300 dark:border-red-700 hover:shadow-md"
             >
-              <svg className="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
               Delete
@@ -326,43 +456,39 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
       <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-2 border-emerald-300 dark:border-emerald-600 rounded-2xl p-6 shadow-lg hover-lift">
         <div className="space-y-4">
           <h4 className="font-semibold text-gray-900 dark:text-white text-lg flex items-center">
-            <svg className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
             Add New Class
           </h4>
             
           <div className="grid grid-cols-2 gap-4">
-            <input
-              type="text"
-              placeholder="Start Time (e.g., 9:00AM)"
-              value={newClass.start_time || ''}
-              onChange={(e) => setNewClass({ ...newClass, start_time: e.target.value })}
-              className="px-4 py-3 text-sm border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-            />
-            <input
-              type="text"
-              placeholder="End Time (e.g., 9:50AM)"
-              value={newClass.end_time || ''}
-              onChange={(e) => setNewClass({ ...newClass, end_time: e.target.value })}
-              className="px-4 py-3 text-sm border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-            />
+            {renderInputField(
+              'start_time',
+              'Start Time (e.g., 9:00AM)',
+              newClass.start_time || '',
+              (value) => setNewClass({ ...newClass, start_time: value })
+            )}
+            {renderInputField(
+              'end_time',
+              'End Time (e.g., 9:50AM)',
+              newClass.end_time || '',
+              (value) => setNewClass({ ...newClass, end_time: value })
+            )}
           </div>
           
-          <input
-            type="text"
-            placeholder="Course Code (e.g., CS F213)"
-            value={newClass.course_code || ''}
-            onChange={(e) => setNewClass({ ...newClass, course_code: e.target.value })}
-            className="w-full px-4 py-3 text-sm border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-          />
-          <input
-            type="text"
-            placeholder="Course Name"
-            value={newClass.course_name || ''}
-            onChange={(e) => setNewClass({ ...newClass, course_name: e.target.value })}
-            className="w-full px-4 py-3 text-sm border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-          />
+          {renderInputField(
+            'course_code',
+            'Course Code (e.g., CS F213)',
+            newClass.course_code || '',
+            (value) => setNewClass({ ...newClass, course_code: value })
+          )}
+          {renderInputField(
+            'course_name',
+            'Course Name',
+            newClass.course_name || '',
+            (value) => setNewClass({ ...newClass, course_name: value })
+          )}
           
           <select
             value={newClass.class_type || 'Lecture'}
@@ -375,20 +501,18 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
             <option value="Lab">Lab</option>
           </select>
           
-          <input
-            type="text"
-            placeholder="Location (e.g., Room 101)"
-            value={newClass.location || ''}
-            onChange={(e) => setNewClass({ ...newClass, location: e.target.value })}
-            className="w-full px-4 py-3 text-sm border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-          />
-          <input
-            type="text"
-            placeholder="Instructor (or 'Staff')"
-            value={newClass.instructor || ''}
-            onChange={(e) => setNewClass({ ...newClass, instructor: e.target.value })}
-            className="w-full px-4 py-3 text-sm border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-          />
+          {renderInputField(
+            'location',
+            'Location (e.g., Room 101)',
+            newClass.location || '',
+            (value) => setNewClass({ ...newClass, location: value })
+          )}
+          {renderInputField(
+            'instructor',
+            'Instructor (or "Staff")',
+            newClass.instructor || '',
+            (value) => setNewClass({ ...newClass, instructor: value })
+          )}
           
           <div className="flex space-x-3 pt-2">
             <button
@@ -427,7 +551,7 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
 
       <div className="mb-8 p-6 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 dark:border-gray-700/50">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-          <svg className="w-5 h-5 text-gray-600 dark:text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-gray-600 dark:text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
           </svg>
           Class Types
@@ -473,7 +597,7 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
               
               {classes.length === 0 ? (
                 <div className="text-center py-16 text-gray-400 dark:text-gray-500 bg-white/50 dark:bg-gray-800/50 rounded-2xl border border-gray-100/50 dark:border-gray-700/50">
-                  <svg className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
                   <p className="text-lg font-medium">No classes scheduled</p>
@@ -500,7 +624,7 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
       <div className="mt-12 mb-8 p-6 bg-amber-50/80 dark:bg-amber-900/20 border border-amber-200/50 dark:border-amber-700/50 rounded-2xl backdrop-blur-sm">
         <div className="flex items-start space-x-4">
           <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-xl flex items-center justify-center flex-shrink-0">
-            <svg className="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
           </div>
@@ -532,7 +656,7 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
           }}
           className="inline-flex items-center px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl hover-lift"
         >
-          <svg className="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
           Download JSON
@@ -551,7 +675,7 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
               </>
             ) : (
               <>
-                <svg className="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
                 Add to Google Calendar
@@ -577,7 +701,7 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
                 syncResult.success 
                   ? 'text-green-600 dark:text-green-400' 
                   : 'text-red-600 dark:text-red-400'
-              }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              }`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 {syncResult.success ? (
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 ) : (
