@@ -53,9 +53,7 @@ function getMimeType(filePath: string): string {
   const mimeTypes: { [key: string]: string } = {
     'jpg': 'image/jpeg',
     'jpeg': 'image/jpeg',
-    'png': 'image/png',
-    'gif': 'image/gif',
-    'webp': 'image/webp'
+    'png': 'image/png'
   };
   return mimeTypes[ext || ''] || 'image/jpeg';
 }
@@ -72,10 +70,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
-        { error: 'Invalid file type. Please upload an image file.' },
+        { error: 'Invalid file type. Please upload a JPG or PNG image file.' },
         { status: 400 }
       );
     }

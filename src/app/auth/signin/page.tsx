@@ -23,7 +23,7 @@ export default function SignIn() {
   }
 
   if (session) {
-    return null; // Will redirect to home page
+    return null;
   }
 
   return (

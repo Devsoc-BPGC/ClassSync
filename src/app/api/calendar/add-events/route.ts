@@ -28,7 +28,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid classes data' }, { status: 400 });
     }
 
-    // Create Google Calendar API client
     const oauth2Client = new google.auth.OAuth2();
     oauth2Client.setCredentials({
       access_token: session.accessToken as string,
@@ -36,10 +35,9 @@ export async function POST(request: NextRequest) {
 
     const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
 
-    // Get current date to calculate next occurrence of each day
     const now = new Date();
     const currentWeekStart = new Date(now);
-    currentWeekStart.setDate(now.getDate() - now.getDay() + 1); // Monday
+    currentWeekStart.setDate(now.getDate() - now.getDay() + 1); 
 
     const dayMap: { [key: string]: number } = {
       'Monday': 1,
@@ -53,14 +51,12 @@ export async function POST(request: NextRequest) {
 
     for (const classSession of classes) {
       try {
-        // Calculate the next occurrence of this day
         const dayOfWeek = dayMap[classSession.day];
         if (!dayOfWeek) continue;
 
         const nextOccurrence = new Date(currentWeekStart);
         nextOccurrence.setDate(currentWeekStart.getDate() + (dayOfWeek - 1));
 
-        // Parse time strings (assuming format like "9:00AM" or "14:30")
         const parseTime = (timeStr: string) => {
           const time = timeStr.toLowerCase();
           let hours = 0;
@@ -104,7 +100,7 @@ export async function POST(request: NextRequest) {
             timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           },
           recurrence: [
-            'RRULE:FREQ=WEEKLY;COUNT=15', // 15 weeks (typical semester)
+            'RRULE:FREQ=WEEKLY;COUNT=15',
           ],
           colorId: getColorId(classSession.class_type),
         };
@@ -122,7 +118,6 @@ export async function POST(request: NextRequest) {
 
       } catch (error) {
         console.error(`Error adding event for ${classSession.course_code}:`, error);
-        // Continue with other events even if one fails
       }
     }
 
@@ -143,8 +138,8 @@ export async function POST(request: NextRequest) {
 
 function getColorId(classType: string): string {
   const type = classType.toLowerCase();
-  if (type.includes('lecture')) return '1'; // Blue
-  if (type.includes('tutorial')) return '2'; // Green
-  if (type.includes('lab') || type.includes('laboratory')) return '3'; // Purple
-  return '4'; // Orange (default)
+  if (type.includes('lecture')) return '1';
+  if (type.includes('tutorial')) return '2';
+  if (type.includes('lab') || type.includes('laboratory')) return '3';
+  return '4';
 } 

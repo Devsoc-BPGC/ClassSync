@@ -13,14 +13,13 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const router = useRouter();
 
   useEffect(() => {
-    if (status === 'loading') return; // Still loading, don't redirect yet
+    if (status === 'loading') return;
     
     if (!session) {
       router.push('/auth/signin');
     }
   }, [session, status, router]);
 
-  // Show loading spinner while checking authentication
   if (status === 'loading') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
@@ -32,11 +31,9 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     );
   }
 
-  // If not authenticated, don't render children (will redirect)
   if (!session) {
     return null;
   }
 
-  // If authenticated, render the protected content
   return <>{children}</>;
 } 
