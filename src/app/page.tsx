@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { useSession, signOut } from 'next-auth/react';
 import FileUpload from '../components/FileUpload';
 import TimetableDisplay from '../components/TimetableDisplay';
 import ErrorMessage from '../components/ErrorMessage';
+import ProtectedRoute from '../components/ProtectedRoute';
 
 interface ClassSession {
   day: string;
@@ -17,6 +19,7 @@ interface ClassSession {
 }
 
 export default function Home() {
+  const { data: session } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [timetableData, setTimetableData] = useState<ClassSession[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -66,10 +69,46 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+    <ProtectedRoute>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+        {/* Header with user info */}
+        <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-100 dark:border-gray-700">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  ClassSync
+                </h1>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  Timetable Manager
+                </span>
+              </div>
+              
+              {session && (
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-3">
+                    <img
+                      src={session.user?.image || ''}
+                      alt="Profile"
+                      className="w-8 h-8 rounded-full"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
+                      {session.user?.name}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => signOut({ callbackUrl: '/auth/signin' })}
+                    className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </header>
 
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-8">
           {!timetableData && (
             <div className="text-center space-y-6">
@@ -137,14 +176,15 @@ export default function Home() {
               </div>
             </div>
           )}
-        </div>
-      </main>
+          </div>
+        </main>
 
-      <div className="mt-12 pb-6 text-center">
-        <p className="text-gray-400 dark:text-gray-500 text-lg">
-          Made with ❤️ by DevSoc
-        </p>
+        <div className="mt-12 pb-6 text-center">
+          <p className="text-gray-400 dark:text-gray-500 text-lg">
+            Made with ❤️ by DevSoc
+          </p>
+        </div>
       </div>
-    </div>
+    </ProtectedRoute>
   );
 }

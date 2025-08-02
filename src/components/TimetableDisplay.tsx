@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useSession } from 'next-auth/react';
 
 interface ClassSession {
   day: string;
@@ -29,9 +30,16 @@ const getClassTypeColor = (classType: string) => {
 };
 
 export default function TimetableDisplay({ data, onDataChange }: TimetableDisplayProps) {
+  const { data: session } = useSession();
   const [editingClass, setEditingClass] = useState<string | null>(null);
   const [editingData, setEditingData] = useState<ClassSession | null>(null);
   const [showAddForm, setShowAddForm] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<{
+    success: boolean;
+    message: string;
+    events?: any[];
+  } | null>(null);
   const [newClass, setNewClass] = useState<Partial<ClassSession>>({
     start_time: '',
     end_time: '',
@@ -118,6 +126,45 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
       location: '',
       instructor: ''
     });
+  };
+
+  const handleSyncToCalendar = async () => {
+    if (!session) return;
+
+    setIsSyncing(true);
+    setSyncResult(null);
+
+    try {
+      const response = await fetch('/api/calendar/add-events', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ classes: data }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setSyncResult({
+          success: true,
+          message: result.message,
+          events: result.events,
+        });
+      } else {
+        setSyncResult({
+          success: false,
+          message: result.error || 'Failed to sync with Google Calendar',
+        });
+      }
+    } catch (error) {
+      setSyncResult({
+        success: false,
+        message: 'Network error occurred while syncing',
+      });
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   const renderClassCard = (session: ClassSession, day: string, index: number) => {
@@ -453,7 +500,7 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
         </div>
       </div>
 
-      <div className="text-center">
+      <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
         <button
           onClick={() => {
             const dataStr = JSON.stringify(data, null, 2);
@@ -474,7 +521,81 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
           </svg>
           Download JSON
         </button>
+
+        {session && (
+          <button
+            onClick={handleSyncToCalendar}
+            disabled={isSyncing}
+            className="inline-flex items-center px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold rounded-xl transition-colors shadow-sm hover:shadow-md"
+          >
+            {isSyncing ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                Syncing...
+              </>
+            ) : (
+              <>
+                <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                Add to Google Calendar
+              </>
+            )}
+          </button>
+        )}
       </div>
+
+      {syncResult && (
+        <div className={`mt-6 rounded-lg p-4 ${
+          syncResult.success 
+            ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700' 
+            : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700'
+        }`}>
+          <div className="flex items-start space-x-3">
+            <svg className={`w-5 h-5 mt-0.5 flex-shrink-0 ${
+              syncResult.success 
+                ? 'text-green-600 dark:text-green-400' 
+                : 'text-red-600 dark:text-red-400'
+            }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {syncResult.success ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              )}
+            </svg>
+            <div>
+              <h4 className={`text-sm font-semibold mb-1 ${
+                syncResult.success 
+                  ? 'text-green-800 dark:text-green-200' 
+                  : 'text-red-800 dark:text-red-200'
+              }`}>
+                {syncResult.success ? 'Sync Successful' : 'Sync Failed'}
+              </h4>
+              <p className={`text-sm ${
+                syncResult.success 
+                  ? 'text-green-700 dark:text-green-300' 
+                  : 'text-red-700 dark:text-red-300'
+              }`}>
+                {syncResult.message}
+              </p>
+              {syncResult.success && syncResult.events && (
+                <div className="mt-3">
+                  <p className="text-xs text-green-600 dark:text-green-400 mb-2">
+                    Added events:
+                  </p>
+                  <div className="space-y-1 max-h-32 overflow-y-auto">
+                    {syncResult.events.map((event, index) => (
+                      <div key={index} className="text-xs text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded">
+                        {event.summary}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 
