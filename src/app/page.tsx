@@ -70,35 +70,44 @@ export default function Home() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
         {/* Header with user info */}
-        <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-100 dark:border-gray-700">
+        <header className="glass border-b border-white/20 dark:border-gray-700/50 sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  ClassSync
-                </h1>
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  Timetable Manager
-                </span>
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-bold gradient-text">
+                      ClassSync
+                    </h1>
+                    <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                      Timetable Manager
+                    </span>
+                  </div>
+                </div>
               </div>
               
               {session && (
                 <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-3 bg-white/50 dark:bg-gray-800/50 px-4 py-2 rounded-xl backdrop-blur-sm">
                     <img
                       src={session.user?.image || ''}
                       alt="Profile"
-                      className="w-8 h-8 rounded-full"
+                      className="w-8 h-8 rounded-full ring-2 ring-white/50 dark:ring-gray-600/50"
                     />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       {session.user?.name}
                     </span>
                   </div>
                   <button
                     onClick={() => signOut({ callbackUrl: '/auth/signin' })}
-                    className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                    className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-all duration-200 border border-gray-200/50 dark:border-gray-600/50 rounded-xl hover:bg-white/50 dark:hover:bg-gray-800/50 backdrop-blur-sm hover:shadow-md"
                   >
                     Sign Out
                   </button>
@@ -111,43 +120,48 @@ export default function Home() {
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-8">
           {!timetableData && (
-            <div className="text-center space-y-6">
-              <div className="max-w-3xl mx-auto">
-                <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-                  AutoSched
-                </h2>
-                <p className="text-lg text-gray-600 dark:text-gray-400 leading-relaxed">
-                  Upload a screenshot of your class timetable. 
-                  Get structured data you can use anywhere.
-                </p>
+            <div className="text-center space-y-8 animate-fade-in-up">
+              <div className="max-w-4xl mx-auto">
+                <div className="mb-8">
+                  
+                  <p className="text-xl text-gray-600 dark:text-gray-400 leading-relaxed max-w-2xl mx-auto">
+                    Transform your timetable screenshots into structured, editable data. 
+                    Sync with Google Calendar and manage your schedule effortlessly.
+                  </p>
+                </div>
               </div>
 
-              <div className="max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-4 text-lg">Before uploading, please ensure:</h3>
-                <ol className="space-y-3 text-left">
-                  <li className="flex items-start space-x-3">
-                    <span className="flex-shrink-0 w-6 h-6 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded-full flex items-center justify-center text-sm font-medium">1</span>
-                    <span className="text-gray-700 dark:text-gray-300">Turn off "Show AM/PM" in your timetable settings</span>
+              <div className="max-w-2xl mx-auto bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/20 dark:border-gray-700/50">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-6 text-lg flex items-center">
+                  <svg className="w-5 h-5 text-blue-600 dark:text-blue-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Before uploading, please ensure:
+                </h3>
+                <ol className="space-y-4 text-left">
+                  <li className="flex items-start space-x-4">
+                    <span className="flex-shrink-0 w-8 h-8 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center text-sm font-bold">1</span>
+                    <span className="text-gray-700 dark:text-gray-300 pt-1">Turn off "Show AM/PM" in your timetable settings</span>
                   </li>
-                  <li className="flex items-start space-x-3">
-                    <span className="flex-shrink-0 w-6 h-6 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded-full flex items-center justify-center text-sm font-medium">2</span>
-                    <span className="text-gray-700 dark:text-gray-300">Take a clear screenshot of your full timetable</span>
+                  <li className="flex items-start space-x-4">
+                    <span className="flex-shrink-0 w-8 h-8 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center text-sm font-bold">2</span>
+                    <span className="text-gray-700 dark:text-gray-300 pt-1">Take a clear screenshot of your full timetable</span>
                   </li>
-                  <li className="flex items-start space-x-3">
-                    <span className="flex-shrink-0 w-6 h-6 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded-full flex items-center justify-center text-sm font-medium">3</span>
-                    <span className="text-gray-700 dark:text-gray-300">Ensure all class information is visible and readable</span>
+                  <li className="flex items-start space-x-4">
+                    <span className="flex-shrink-0 w-8 h-8 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center text-sm font-bold">3</span>
+                    <span className="text-gray-700 dark:text-gray-300 pt-1">Ensure all class information is visible and readable</span>
                   </li>
                 </ol>
               </div>
 
-              <div className="max-w-2xl mx-auto">
+              <div className="max-w-2xl mx-auto animate-slide-in-right">
                 <FileUpload onFileUpload={handleFileUpload} isLoading={isLoading} />
               </div>
             </div>
           )}
 
           {error && (
-            <div className="max-w-2xl mx-auto">
+            <div className="max-w-2xl mx-auto animate-fade-in-up">
               <ErrorMessage 
                 error={error} 
                 details={errorDetails} 
@@ -157,7 +171,7 @@ export default function Home() {
           )}
 
           {timetableData && (
-            <div className="space-y-6">
+            <div className="space-y-8 animate-fade-in-up">
               <TimetableDisplay 
                 data={timetableData} 
                 onDataChange={setTimetableData}
@@ -166,7 +180,7 @@ export default function Home() {
               <div className="text-center">
                 <button
                   onClick={handleRetry}
-                  className="inline-flex items-center px-6 py-3 border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 font-semibold rounded-xl transition-all duration-200 hover:shadow-md"
+                  className="inline-flex items-center px-8 py-4 border-2 border-gray-300/50 dark:border-gray-600/50 text-gray-700 dark:text-gray-300 bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 font-semibold rounded-2xl transition-all duration-200 hover:shadow-lg backdrop-blur-sm hover-lift"
                 >
                   <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -179,11 +193,16 @@ export default function Home() {
           </div>
         </main>
 
-        <div className="mt-12 pb-6 text-center">
-          <p className="text-gray-400 dark:text-gray-500 text-lg">
-            Made with ❤️ by DevSoc
-          </p>
-        </div>
+        <footer className="mt-16 pb-8 text-center">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-white/20 dark:border-gray-700/50">
+              <p className="text-gray-600 dark:text-gray-400 text-lg font-medium">
+                Made with ❤️ by DevSoc
+              </p>
+              
+            </div>
+          </div>
+        </footer>
       </div>
     </ProtectedRoute>
   );
