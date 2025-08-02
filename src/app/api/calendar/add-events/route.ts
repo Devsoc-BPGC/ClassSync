@@ -211,7 +211,7 @@ export async function POST(request: NextRequest) {
             timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           },
           recurrence: [
-            'RRULE:FREQ=WEEKLY;COUNT=15',
+            'RRULE:FREQ=WEEKLY;UNTIL=20251130T235959Z',
           ],
           colorId: getColorId(classSession.class_type),
         };
