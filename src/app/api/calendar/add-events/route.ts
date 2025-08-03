@@ -11,7 +11,7 @@ interface ClassSession {
   course_name: string;
   class_type: string;
   location: string;
-  instructor: string;
+  instructor?: string | null;
 }
 
 function sanitizeString(input: string): string {
@@ -70,7 +70,7 @@ function validateClassSession(classSession: any): { isValid: boolean; errors: st
     return { isValid: false, errors };
   }
 
-  const requiredFields = ['day', 'start_time', 'end_time', 'course_code', 'course_name', 'class_type', 'location', 'instructor'];
+  const requiredFields = ['day', 'start_time', 'end_time', 'course_code', 'course_name', 'class_type', 'location'];
   const validDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
   requiredFields.forEach(field => {
@@ -196,7 +196,7 @@ export async function POST(request: NextRequest) {
         const sanitizedCourseCode = sanitizeString(classSession.course_code);
         const sanitizedCourseName = sanitizeString(classSession.course_name);
         const sanitizedLocation = sanitizeString(classSession.location);
-        const sanitizedInstructor = sanitizeString(classSession.instructor);
+        const sanitizedInstructor = sanitizeString(classSession.instructor || '');
 
         const event = {
           summary: `${sanitizedCourseCode} - ${sanitizedCourseName}`,

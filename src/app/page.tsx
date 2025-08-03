@@ -16,7 +16,7 @@ interface ClassSession {
   course_name: string;
   class_type: string;
   location: string;
-  instructor: string;
+  instructor?: string | null;
 }
 
 export default function Home() {
@@ -82,8 +82,7 @@ export default function Home() {
                  classSession.course_code &&
                  classSession.course_name &&
                  classSession.class_type &&
-                 classSession.location &&
-                 classSession.instructor;
+                 classSession.location;
         });
 
         if (validData.length === 0) {

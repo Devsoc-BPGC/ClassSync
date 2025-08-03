@@ -11,7 +11,7 @@ interface ClassSession {
   course_name: string;
   class_type: string;
   location: string;
-  instructor: string;
+  instructor?: string | null;
 }
 
 interface GoogleCalendarSyncProps {

@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
-const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
 
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 
 const prompt = `STEP-BY-STEP EXTRACTION METHOD:
 1. Look at the image and identify the 5 day columns: Monday (leftmost), Tuesday, Wednesday, Thursday, Friday (rightmost)
@@ -56,85 +53,15 @@ function getMimeType(filePath: string): string {
   const mimeTypes: { [key: string]: string } = {
     'jpg': 'image/jpeg',
     'jpeg': 'image/jpeg',
-    'png': 'image/png'
+    'png': 'image/png',
+    'gif': 'image/gif',
+    'webp': 'image/webp'
   };
   return mimeTypes[ext || ''] || 'image/jpeg';
 }
 
-function validateClassData(data: any[]): { isValid: boolean; errors: string[] } {
-  const errors: string[] = [];
-  
-  if (!Array.isArray(data)) {
-    errors.push('Data must be an array');
-    return { isValid: false, errors };
-  }
-
-  const requiredFields = ['day', 'start_time', 'end_time', 'course_code', 'course_name', 'class_type', 'location', 'instructor'];
-  const validDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-  const validClassTypes = ['Lecture', 'Tutorial', 'Laboratory', 'Lab'];
-
-  data.forEach((classSession, index) => {
-    if (typeof classSession !== 'object' || classSession === null) {
-      errors.push(`Class ${index + 1}: Invalid class object`);
-      return;
-    }
-
-    requiredFields.forEach(field => {
-      if (!classSession[field] || typeof classSession[field] !== 'string') {
-        errors.push(`Class ${index + 1}: Missing or invalid ${field}`);
-      }
-    });
-
-    if (classSession.day && !validDays.includes(classSession.day)) {
-      errors.push(`Class ${index + 1}: Invalid day "${classSession.day}"`);
-    }
-
-    if (classSession.class_type && !validClassTypes.includes(classSession.class_type)) {
-      errors.push(`Class ${index + 1}: Invalid class type "${classSession.class_type}"`);
-    }
-  });
-
-  return { isValid: errors.length === 0, errors };
-}
-
-function checkRateLimit(ip: string): { allowed: boolean; remaining: number } {
-  const now = Date.now();
-  const windowMs = 60 * 1000; 
-  const maxRequests = 5;
-
-  const userData = rateLimitMap.get(ip);
-  
-  if (!userData || now > userData.resetTime) {
-    rateLimitMap.set(ip, { count: 1, resetTime: now + windowMs });
-    return { allowed: true, remaining: maxRequests - 1 };
-  }
-
-  if (userData.count >= maxRequests) {
-    return { allowed: false, remaining: 0 };
-  }
-
-  userData.count++;
-  return { allowed: true, remaining: maxRequests - userData.count };
-}
-
 export async function POST(request: NextRequest) {
   try {
-    const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
-    const rateLimit = checkRateLimit(ip);
-    
-    if (!rateLimit.allowed) {
-      return NextResponse.json(
-        { error: 'Rate limit exceeded. Please try again later.' },
-        { 
-          status: 429,
-          headers: {
-            'X-RateLimit-Remaining': rateLimit.remaining.toString(),
-            'Retry-After': '60'
-          }
-        }
-      );
-    }
-
     const formData = await request.formData();
     const file = formData.get('file') as File;
 
@@ -145,43 +72,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (file.size > MAX_FILE_SIZE) {
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
-        { error: 'File size exceeds 10MB limit' },
-        { status: 400 }
-      );
-    }
-
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      return NextResponse.json(
-        { error: 'Invalid file type. Please upload a JPG or PNG image file.' },
-        { status: 400 }
-      );
-    }
-
-    if (file.size === 0) {
-      return NextResponse.json(
-        { error: 'File is empty' },
+        { error: 'Invalid file type. Please upload an image file.' },
         { status: 400 }
       );
     }
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-
-    if (buffer.length === 0) {
-      return NextResponse.json(
-        { error: 'Failed to read file data' },
-        { status: 400 }
-      );
-    }
-
-    if (!GEMINI_API_KEY) {
-      return NextResponse.json(
-        { error: 'API configuration error. Please contact support.' },
-        { status: 500 }
-      );
-    }
 
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
@@ -211,38 +111,14 @@ export async function POST(request: NextRequest) {
     
     cleanedOutput = cleanedOutput.trim();
     
-    let jsonData;
-    try {
-      jsonData = JSON.parse(cleanedOutput);
-    } catch (parseError) {
-      return NextResponse.json(
-        { 
-          error: 'Failed to parse AI response. Please try uploading a clearer image.',
-          details: 'Invalid JSON response from AI service'
-        },
-        { status: 500 }
-      );
-    }
-
-    const validation = validateClassData(jsonData);
-    if (!validation.isValid) {
-      return NextResponse.json(
-        { 
-          error: 'Invalid data structure received from AI service',
-          details: validation.errors.join(', ')
-        },
-        { status: 500 }
-      );
-    }
+    const jsonData = JSON.parse(cleanedOutput);
+    console.log(jsonData);
+    console.log(typeof cleanedOutput);
 
     return NextResponse.json({
       success: true,
       data: jsonData,
       message: `Successfully extracted ${jsonData.length} class sessions`
-    }, {
-      headers: {
-        'X-RateLimit-Remaining': rateLimit.remaining.toString()
-      }
     });
 
   } catch (error) {

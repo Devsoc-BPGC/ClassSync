@@ -11,7 +11,7 @@ interface ClassSession {
   course_name: string;
   class_type: string;
   location: string;
-  instructor: string;
+  instructor?: string | null;
 }
 
 interface TimetableDisplayProps {
@@ -60,7 +60,6 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
   });
   const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
 
-  // Save data to localStorage for persistence
   useEffect(() => {
     if (data && data.length > 0) {
       try {
@@ -71,7 +70,6 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
     }
   }, [data]);
 
-  // Load data from localStorage on mount
   useEffect(() => {
     try {
       const savedData = localStorage.getItem('timetableData');
@@ -110,7 +108,6 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
     }
 
     if (classData.start_time && classData.end_time && validateTimeFormat(classData.start_time) && validateTimeFormat(classData.end_time)) {
-      // Simple time comparison (this could be more sophisticated)
       const startTime = classData.start_time.toLowerCase();
       const endTime = classData.end_time.toLowerCase();
       
@@ -121,10 +118,6 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
 
     if (!classData.location?.trim()) {
       errors.location = 'Location is required';
-    }
-
-    if (!classData.instructor?.trim()) {
-      errors.instructor = 'Instructor is required';
     }
 
     return errors;
@@ -154,7 +147,7 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
         course_code: sanitizeInput(editingData.course_code),
         course_name: sanitizeInput(editingData.course_name),
         location: sanitizeInput(editingData.location),
-        instructor: sanitizeInput(editingData.instructor),
+        instructor: sanitizeInput(editingData.instructor || ''),
         start_time: editingData.start_time.trim(),
         end_time: editingData.end_time.trim()
       };
@@ -202,7 +195,7 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
         course_name: sanitizeInput(newClass.course_name || ''),
         class_type: newClass.class_type || 'Lecture',
         location: sanitizeInput(newClass.location || ''),
-        instructor: sanitizeInput(newClass.instructor || 'Staff')
+        instructor: sanitizeInput(newClass.instructor || '')
       };
       
       const newData = [...data, classToAdd];
@@ -358,8 +351,9 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
             {renderInputField(
               'instructor',
               'Instructor',
-              editingData.instructor,
-              (value) => setEditingData({ ...editingData, instructor: value })
+              editingData.instructor || '',
+              (value) => setEditingData({ ...editingData, instructor: value }),
+              false
             )}
             
             <div className="flex space-x-3 pt-2">
@@ -418,7 +412,7 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
-              <span className="font-medium">{session.instructor}</span>
+              <span className="font-medium">{session.instructor || 'Staff'}</span>
             </div>
           </div>
         </div>
@@ -511,7 +505,8 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
             'instructor',
             'Instructor (or "Staff")',
             newClass.instructor || '',
-            (value) => setNewClass({ ...newClass, instructor: value })
+            (value) => setNewClass({ ...newClass, instructor: value }),
+            false
           )}
           
           <div className="flex space-x-3 pt-2">
