@@ -280,7 +280,7 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={`w-full px-4 py-3 text-sm border rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
+        className={`w-full px-3 py-2 text-xs border rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all ${
           validationErrors[field] 
             ? 'border-red-300 dark:border-red-600' 
             : 'border-gray-200 dark:border-gray-600'
@@ -301,9 +301,9 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
     
     if (isEditing && editingData) {
       return (
-        <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-2 border-blue-300 dark:border-blue-600 rounded-2xl p-6 shadow-lg hover-lift">
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+        <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-2 border-blue-300 dark:border-blue-600 rounded-lg p-4 shadow-lg hover-lift">
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
               {renderInputField(
                 'start_time',
                 'Start Time',
@@ -334,7 +334,7 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
             <select
               value={editingData.class_type}
               onChange={(e) => setEditingData({ ...editingData, class_type: e.target.value })}
-              className="w-full px-4 py-3 text-sm border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className="w-full px-3 py-2 text-xs border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             >
               <option value="Lecture">Lecture</option>
               <option value="Tutorial">Tutorial</option>
@@ -356,16 +356,16 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
               false
             )}
             
-            <div className="flex space-x-3 pt-2">
+            <div className="flex space-x-2 pt-2">
               <button
                 onClick={() => handleSave(day, index)}
-                className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-all duration-200 hover:shadow-md"
+                className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-all duration-200 hover:shadow-md"
               >
                 Save Changes
               </button>
               <button
                 onClick={handleCancel}
-                className="flex-1 px-4 py-3 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded-xl transition-all duration-200 hover:shadow-md"
+                className="flex-1 px-3 py-2 bg-gray-500 hover:bg-gray-600 text-white text-xs font-medium rounded-lg transition-all duration-200 hover:shadow-md"
               >
                 Cancel
               </button>
@@ -376,63 +376,63 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
     }
 
     return (
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-100/50 dark:border-gray-700/50 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover-lift group">
-        <div className="space-y-4">
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-100/50 dark:border-gray-700/50 rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-300 hover-lift group">
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <div className="text-sm font-semibold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-lg">
+            <div className="text-xs font-semibold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-md">
               {session.start_time} - {session.end_time}
             </div>
-            <span className={`inline-block px-3 py-1 text-xs font-bold rounded-full border ${getClassTypeColor(session.class_type)}`}>
+            <span className={`inline-block px-2 py-1 text-xs font-bold rounded-full border ${getClassTypeColor(session.class_type)}`}>
               {session.class_type}
             </span>
           </div>
           
           <div>
-            <div className="font-bold text-gray-900 dark:text-white text-lg">
+            <div className="font-bold text-gray-900 dark:text-white text-sm">
               {session.course_code}
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            <div className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
               {session.course_name}
             </div>
           </div>
           
-          <div className="space-y-3">
-            <div className="flex items-center space-x-3 text-sm text-gray-600 dark:text-gray-400">
-              <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2 text-xs text-gray-600 dark:text-gray-400">
+              <div className="w-6 h-6 bg-blue-100 dark:bg-blue-900/30 rounded-md flex items-center justify-center">
+                <svg className="w-3 h-3 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </div>
-              <span className="font-medium">{session.location}</span>
+              <span className="font-medium truncate">{session.location}</span>
             </div>
-            <div className="flex items-center space-x-3 text-sm text-gray-600 dark:text-gray-400">
-              <div className="w-8 h-8 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center">
-                <svg className="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <div className="flex items-center space-x-2 text-xs text-gray-600 dark:text-gray-400">
+              <div className="w-6 h-6 bg-emerald-100 dark:bg-emerald-900/30 rounded-md flex items-center justify-center">
+                <svg className="w-3 h-3 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
-              <span className="font-medium">{session.instructor || 'Staff'}</span>
+              <span className="font-medium truncate">{session.instructor || 'Staff'}</span>
             </div>
           </div>
         </div>
         
-        <div className="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
-          <div className="flex space-x-3">
+        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+          <div className="flex space-x-2">
             <button
               onClick={() => handleEdit(session, index)}
-              className="flex-1 px-4 py-3 bg-blue-50 hover:bg-blue-100 text-blue-700 text-sm font-medium rounded-xl transition-all duration-200 border border-blue-200 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 dark:text-blue-300 dark:border-blue-700 hover:shadow-md"
+              className="flex-1 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-medium rounded-lg transition-all duration-200 border border-blue-200 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 dark:text-blue-300 dark:border-blue-700 hover:shadow-sm"
             >
-              <svg className="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <svg className="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
               </svg>
               Edit
             </button>
             <button
               onClick={() => handleDelete(day, index)}
-              className="flex-1 px-4 py-3 bg-red-50 hover:bg-red-100 text-red-700 text-sm font-medium rounded-xl transition-all duration-200 border border-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 dark:text-red-300 dark:border-red-700 hover:shadow-md"
+              className="flex-1 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-medium rounded-lg transition-all duration-200 border border-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 dark:text-red-300 dark:border-red-700 hover:shadow-sm"
             >
-              <svg className="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <svg className="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
               Delete
@@ -447,16 +447,16 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
     if (showAddForm !== day) return null;
 
     return (
-      <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-2 border-emerald-300 dark:border-emerald-600 rounded-2xl p-6 shadow-lg hover-lift">
-        <div className="space-y-4">
-          <h4 className="font-semibold text-gray-900 dark:text-white text-lg flex items-center">
-            <svg className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-2 border-emerald-300 dark:border-emerald-600 rounded-lg p-4 shadow-lg hover-lift">
+        <div className="space-y-3">
+          <h4 className="font-semibold text-gray-900 dark:text-white text-sm flex items-center">
+            <svg className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
             Add New Class
           </h4>
             
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             {renderInputField(
               'start_time',
               'Start Time (e.g., 9:00AM)',
@@ -487,7 +487,7 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
           <select
             value={newClass.class_type || 'Lecture'}
             onChange={(e) => setNewClass({ ...newClass, class_type: e.target.value })}
-            className="w-full px-4 py-3 text-sm border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+            className="w-full px-3 py-2 text-xs border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
           >
             <option value="Lecture">Lecture</option>
             <option value="Tutorial">Tutorial</option>
@@ -509,16 +509,16 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
             false
           )}
           
-          <div className="flex space-x-3 pt-2">
+          <div className="flex space-x-2 pt-2">
             <button
               onClick={() => handleAdd(day)}
-              className="flex-1 px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-xl transition-all duration-200 hover:shadow-md"
+              className="flex-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-all duration-200 hover:shadow-md"
             >
               Add Class
             </button>
             <button
               onClick={handleCancelAdd}
-              className="flex-1 px-4 py-3 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded-xl transition-all duration-200 hover:shadow-md"
+              className="flex-1 px-3 py-2 bg-gray-500 hover:bg-gray-600 text-white text-xs font-medium rounded-lg transition-all duration-200 hover:shadow-md"
             >
               Cancel
             </button>
@@ -529,12 +529,12 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto">
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold gradient-text mb-3">
+    <div className="w-full max-w-6xl mx-auto">
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold gradient-text mb-2">
           Your Timetable
         </h2>
-        <p className="text-gray-600 dark:text-gray-400 text-lg">
+        <p className="text-gray-600 dark:text-gray-400 text-sm">
           {data.length} class sessions extracted successfully
           {onDataChange && (
             <span className="ml-2 text-blue-600 dark:text-blue-400 font-medium">
@@ -544,77 +544,68 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
         </p>
       </div>
 
-      <div className="mb-8 p-6 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 dark:border-gray-700/50">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-          <svg className="w-5 h-5 text-gray-600 dark:text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <div className="mb-6 p-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl shadow-lg border border-white/20 dark:border-gray-700/50">
+        <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
+          <svg className="w-4 h-4 text-gray-600 dark:text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
           </svg>
           Class Types
         </h3>
-        <div className="flex flex-wrap gap-6">
-          <div className="flex items-center space-x-3">
-            <div className="w-4 h-4 bg-blue-500 rounded-full shadow-sm"></div>
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Lecture</span>
+        <div className="flex flex-wrap gap-4">
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 bg-blue-500 rounded-full shadow-sm"></div>
+            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Lecture</span>
           </div>
-          <div className="flex items-center space-x-3">
-            <div className="w-4 h-4 bg-emerald-500 rounded-full shadow-sm"></div>
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Tutorial</span>
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 bg-emerald-500 rounded-full shadow-sm"></div>
+            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Tutorial</span>
           </div>
-          <div className="flex items-center space-x-3">
-            <div className="w-4 h-4 bg-purple-500 rounded-full shadow-sm"></div>
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Lab</span>
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 bg-purple-500 rounded-full shadow-sm"></div>
+            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Lab</span>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         {classesByDay.map(({ day, classes }, dayIndex) => (
-          <div key={day} className="space-y-6 animate-fade-in-up" style={{ animationDelay: `${dayIndex * 100}ms` }}>
+          <div key={day} className="space-y-3 animate-fade-in-up" style={{ animationDelay: `${dayIndex * 100}ms` }}>
             <div className="text-center">
-              <h3 className="font-bold text-gray-900 dark:text-white text-2xl mb-2">
+              <h3 className="font-bold text-gray-900 dark:text-white text-lg mb-1">
                 {day}
               </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 font-medium">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 font-medium">
                 {classes.length} class{classes.length !== 1 ? 'es' : ''}
               </p>
               {onDataChange && (
                 <button
                   onClick={() => setShowAddForm(showAddForm === day ? null : day)}
-                  className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-xl transition-all duration-200 hover:shadow-lg hover-lift"
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg transition-all duration-200 hover:shadow-lg hover-lift"
                 >
                   {showAddForm === day ? 'Cancel' : '+ Add Class'}
                 </button>
               )}
             </div>
             
-            <div className="space-y-6">
+            <div className="space-y-3">
               {renderAddForm(day)}
               
               {classes.length === 0 ? (
-                <div className="text-center py-16 text-gray-400 dark:text-gray-500 bg-white/50 dark:bg-gray-800/50 rounded-2xl border border-gray-100/50 dark:border-gray-700/50">
-                  <svg className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <div className="text-center py-8 text-gray-400 dark:text-gray-500 bg-white/50 dark:bg-gray-800/50 rounded-xl border border-gray-100/50 dark:border-gray-700/50">
+                  <svg className="w-8 h-8 mx-auto mb-2 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
-                  <p className="text-lg font-medium">No classes scheduled</p>
-                  <p className="text-sm mt-1">Add your first class to get started</p>
+                  <p className="text-sm font-medium">No classes scheduled</p>
                 </div>
               ) : (
-                classes
-                  .sort((a, b) => {
-                    const timeA = new Date(`2000-01-01 ${a.start_time}`);
-                    const timeB = new Date(`2000-01-01 ${b.start_time}`);
-                    return timeA.getTime() - timeB.getTime();
-                  })
-                  .map((session, index) => (
-                    <div key={`${day}-${session.course_code}-${session.start_time}-${index}`} className="animate-slide-in-right" style={{ animationDelay: `${(dayIndex * 100) + (index * 50)}ms` }}>
-                      {renderClassCard(session, day, index)}
-                    </div>
-                  ))
+                classes.map((session, index) => renderClassCard(session, day, index))
               )}
             </div>
           </div>
         ))}
       </div>
+
+     
 
       <div className="mt-12 mb-8 p-6 bg-amber-50/80 dark:bg-amber-900/20 border border-amber-200/50 dark:border-amber-700/50 rounded-2xl backdrop-blur-sm">
         <div className="flex items-start space-x-4">
