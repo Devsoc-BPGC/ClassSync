@@ -115,165 +115,158 @@ const rateLimiter = new RateLimiterMemory({
 });
 
 export async function POST(request: NextRequest) {
-  const ip = await getUserIp();
-  try{
+  try {
+    const ip = await getUserIp();
     await rateLimiter.consume(ip, 2);
-    try {
-  
-      const session = await getServerSession(authOptions);
-      
-      if (!session?.accessToken) {
-        return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-      }
-
-      const body = await request.json();
-      const { classes } = body as { classes: ClassSession[] };
-
-      if (!classes || !Array.isArray(classes)) {
-        return NextResponse.json({ error: 'Invalid classes data' }, { status: 400 });
-      }
-
-      if (classes.length === 0) {
-        return NextResponse.json({ error: 'No classes provided' }, { status: 400 });
-      }
-
-      if (classes.length > 100) {
-        return NextResponse.json({ error: 'Too many classes. Maximum 100 allowed.' }, { status: 400 });
-      }
-
-      const validationErrors: string[] = [];
-      classes.forEach((classSession, index) => {
-        const validation = validateClassSession(classSession);
-        if (!validation.isValid) {
-          validation.errors.forEach(error => {
-            validationErrors.push(`Class ${index + 1}: ${error}`);
-          });
-        }
-      });
-
-      if (validationErrors.length > 0) {
-        return NextResponse.json({ 
-          error: 'Invalid class data', 
-          details: validationErrors.join(', ')
-        }, { status: 400 });
-      }
-
-      const oauth2Client = new google.auth.OAuth2();
-      oauth2Client.setCredentials({
-        access_token: session.accessToken as string,
-      });
-
-      const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
-
-      const now = new Date();
-      const currentWeekStart = new Date(now);
-      currentWeekStart.setDate(now.getDate() - now.getDay() + 1); 
-
-      const dayMap: { [key: string]: number } = {
-        'Monday': 1,
-        'Tuesday': 2,
-        'Wednesday': 3,
-        'Thursday': 4,
-        'Friday': 5,
-      };
-
-      const addedEvents = [];
-      const failedEvents: string[] = [];
-
-      for (const classSession of classes) {
-        try {
-          const dayOfWeek = dayMap[classSession.day];
-          if (!dayOfWeek) {
-            failedEvents.push(`${classSession.course_code}: Invalid day`);
-            continue;
-          }
-
-          const nextOccurrence = new Date(currentWeekStart);
-          nextOccurrence.setDate(currentWeekStart.getDate() + (dayOfWeek - 1));
-
-          const startTime = parseTime(classSession.start_time);
-          const endTime = parseTime(classSession.end_time);
-
-          if (!startTime.isValid || !endTime.isValid) {
-            failedEvents.push(`${classSession.course_code}: Invalid time format`);
-            continue;
-          }
-
-          const eventStart = new Date(nextOccurrence);
-          eventStart.setHours(startTime.hours, startTime.minutes, 0, 0);
-
-          const eventEnd = new Date(nextOccurrence);
-          eventEnd.setHours(endTime.hours, endTime.minutes, 0, 0);
-
-          const sanitizedCourseCode = sanitizeString(classSession.course_code);
-          const sanitizedCourseName = sanitizeString(classSession.course_name);
-          const sanitizedLocation = sanitizeString(classSession.location);
-          const sanitizedInstructor = sanitizeString(classSession.instructor || '');
-
-          const event = {
-            summary: `${sanitizedCourseCode} - ${sanitizedCourseName}`,
-            description: `Class Type: ${classSession.class_type}\nInstructor: ${sanitizedInstructor}`,
-            location: sanitizedLocation,
-            start: {
-              dateTime: eventStart.toISOString(),
-              timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-            },
-            end: {
-              dateTime: eventEnd.toISOString(),
-              timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-            },
-            recurrence: [
-              'RRULE:FREQ=WEEKLY;UNTIL=20251130T235959Z',
-            ],
-            colorId: getColorId(classSession.class_type),
-          };
-
-          const response = await calendar.events.insert({
-            calendarId: 'primary',
-            requestBody: event,
-          });
-
-          addedEvents.push({
-            id: response.data.id,
-            summary: event.summary,
-            start: event.start.dateTime,
-          });
-
-        } catch (error) {
-          console.error(`Error adding event for ${classSession.course_code}:`, error);
-          failedEvents.push(`${classSession.course_code}: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        }
-      }
-
-      const message = failedEvents.length > 0 
-        ? `Successfully added ${addedEvents.length} events. ${failedEvents.length} events failed.`
-        : `Successfully added ${addedEvents.length} events to Google Calendar`;
-
-      return NextResponse.json({
-        success: true,
-        message,
-        events: addedEvents,
-        failedEvents: failedEvents.length > 0 ? failedEvents : undefined,
-      });
-
-    } catch (error) {
-      console.error('Error adding events to calendar:', error);
-      return NextResponse.json(
-        { error: 'Failed to add events to calendar' },
-        { status: 500 }
-      );
+    
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.accessToken) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-  }catch (error) {
-    if (error instanceof Error && error.message.includes('Rate limit exceeded')) {
+    const body = await request.json();
+    const { classes } = body as { classes: ClassSession[] };
+
+    if (!classes || !Array.isArray(classes)) {
+      return NextResponse.json({ error: 'Invalid classes data' }, { status: 400 });
+    }
+
+    if (classes.length === 0) {
+      return NextResponse.json({ error: 'No classes provided' }, { status: 400 });
+    }
+
+    if (classes.length > 100) {
+      return NextResponse.json({ error: 'Too many classes. Maximum 100 allowed.' }, { status: 400 });
+    }
+
+    const validationErrors: string[] = [];
+    classes.forEach((classSession, index) => {
+      const validation = validateClassSession(classSession);
+      if (!validation.isValid) {
+        validation.errors.forEach(error => {
+          validationErrors.push(`Class ${index + 1}: ${error}`);
+        });
+      }
+    });
+
+    if (validationErrors.length > 0) {
+      return NextResponse.json({ 
+        error: 'Invalid class data', 
+        details: validationErrors.join(', ')
+      }, { status: 400 });
+    }
+
+    const oauth2Client = new google.auth.OAuth2();
+    oauth2Client.setCredentials({
+      access_token: session.accessToken as string,
+    });
+
+    const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+
+    const now = new Date();
+    const currentWeekStart = new Date(now);
+    currentWeekStart.setDate(now.getDate() - now.getDay() + 1); 
+
+    const dayMap: { [key: string]: number } = {
+      'Monday': 1,
+      'Tuesday': 2,
+      'Wednesday': 3,
+      'Thursday': 4,
+      'Friday': 5,
+    };
+
+    const addedEvents = [];
+    const failedEvents: string[] = [];
+
+    for (const classSession of classes) {
+      try {
+        const dayOfWeek = dayMap[classSession.day];
+        if (!dayOfWeek) {
+          failedEvents.push(`${classSession.course_code}: Invalid day`);
+          continue;
+        }
+
+        const nextOccurrence = new Date(currentWeekStart);
+        nextOccurrence.setDate(currentWeekStart.getDate() + (dayOfWeek - 1));
+
+        const startTime = parseTime(classSession.start_time);
+        const endTime = parseTime(classSession.end_time);
+
+        if (!startTime.isValid || !endTime.isValid) {
+          failedEvents.push(`${classSession.course_code}: Invalid time format`);
+          continue;
+        }
+
+        const eventStart = new Date(nextOccurrence);
+        eventStart.setHours(startTime.hours, startTime.minutes, 0, 0);
+
+        const eventEnd = new Date(nextOccurrence);
+        eventEnd.setHours(endTime.hours, endTime.minutes, 0, 0);
+
+        const sanitizedCourseCode = sanitizeString(classSession.course_code);
+        const sanitizedCourseName = sanitizeString(classSession.course_name);
+        const sanitizedLocation = sanitizeString(classSession.location);
+        const sanitizedInstructor = sanitizeString(classSession.instructor || '');
+
+        const event = {
+          summary: `${sanitizedCourseCode} - ${sanitizedCourseName}`,
+          description: `Class Type: ${classSession.class_type}\nInstructor: ${sanitizedInstructor}`,
+          location: sanitizedLocation,
+          start: {
+            dateTime: eventStart.toISOString(),
+            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          },
+          end: {
+            dateTime: eventEnd.toISOString(),
+            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          },
+          recurrence: [
+            'RRULE:FREQ=WEEKLY;UNTIL=20251130T235959Z',
+          ],
+          colorId: getColorId(classSession.class_type),
+        };
+
+        const response = await calendar.events.insert({
+          calendarId: 'primary',
+          requestBody: event,
+        });
+
+        addedEvents.push({
+          id: response.data.id,
+          summary: event.summary,
+          start: event.start.dateTime,
+        });
+
+      } catch (error) {
+        console.error(`Error adding event for ${classSession.course_code}:`, error);
+        failedEvents.push(`${classSession.course_code}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }
+
+    const message = failedEvents.length > 0 
+      ? `Successfully added ${addedEvents.length} events. ${failedEvents.length} events failed.`
+      : `Successfully added ${addedEvents.length} events to Google Calendar`;
+
+    return NextResponse.json({
+      success: true,
+      message,
+      events: addedEvents,
+      failedEvents: failedEvents.length > 0 ? failedEvents : undefined,
+    });
+
+  } catch (error) {
+    // Handle rate limiting errors
+    if (error instanceof Error && error.message.includes('RateLimiter')) {
       return NextResponse.json(
-        { error: 'Please try again later' },
+        { error: 'Too many requests. Please try again later.' },
         { status: 429 }
       );
     }
-    console.error('Unexpected error:', error);
+    
+    console.error('Error in calendar API:', error);
     return NextResponse.json(
-      { error: 'An unexpected error occurred' },
+      { error: 'Failed to add events to calendar' },
       { status: 500 }
     );
   }

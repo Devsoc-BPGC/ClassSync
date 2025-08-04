@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 
 interface ClassSession {
@@ -598,7 +598,12 @@ export default function TimetableDisplay({ data, onDataChange }: TimetableDispla
                   <p className="text-sm font-medium">No classes scheduled</p>
                 </div>
               ) : (
-                classes.map((session, index) => renderClassCard(session, day, index))
+                classes.map((session, index) => 
+                  React.cloneElement(
+                    renderClassCard(session, day, index),
+                    { key: `${day}-${index}` }
+                  )
+                )
               )}
             </div>
           </div>
