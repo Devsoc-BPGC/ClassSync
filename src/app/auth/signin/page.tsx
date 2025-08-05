@@ -41,9 +41,26 @@ export default function SignIn() {
 
           <div className="space-y-6">
             <div className="text-center">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Upload and manage your class timetables with Google Calendar integration
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                AI-powered timetable parser that automatically extracts your class schedule from screenshots and syncs with Google Calendar
               </p>
+            </div>
+
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-5 mb-6">
+              <h4 className="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-3 flex items-center">
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                How to Upload Your Timetable
+              </h4>
+              <ol className="text-xs text-blue-700 dark:text-blue-300 space-y-1.5 list-decimal list-inside">
+                <li>Sign-in to your ERP portal</li>
+                <li>Navigate to <strong>Student Center</strong></li>
+                <li>Go to your <strong>Weekly Schedule</strong></li>
+                <li>Turn off <strong>"Show AM/PM"</strong> in the options below</li>
+                <li>Take a clear screenshot and crop it so only the timetable is visible</li>
+                <li>Ensure both <strong>"Day"</strong> column and <strong>"Time"</strong> row headings are visible</li>
+              </ol>
             </div>
 
             <button
