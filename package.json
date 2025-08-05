@@ -11,6 +11,7 @@
   "dependencies": {
     "@auth/core": "^0.34.2",
     "@google/generative-ai": "^0.24.1",
+    "drizzle-orm": "^0.44.4",
     "formidable": "^3.5.4",
     "googleapis": "^154.1.0",
     "multer": "^2.0.2",
