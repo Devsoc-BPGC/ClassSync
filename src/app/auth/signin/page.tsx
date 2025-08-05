@@ -54,13 +54,29 @@ export default function SignIn() {
                 How to Upload Your Timetable
               </h4>
               <ol className="text-xs text-blue-700 dark:text-blue-300 space-y-1.5 list-decimal list-inside">
-                <li>Sign-in to your ERP portal</li>
+                <li>Sign-in to your ERP portal <strong>using your BITSMail credentials</strong></li>
                 <li>Navigate to <strong>Student Center</strong></li>
                 <li>Go to your <strong>Weekly Schedule</strong></li>
                 <li>Turn off <strong>"Show AM/PM"</strong> in the options below</li>
                 <li>Take a clear screenshot and crop it so only the timetable is visible</li>
                 <li>Ensure both <strong>"Day"</strong> column and <strong>"Time"</strong> row headings are visible</li>
               </ol>
+            </div>
+
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-4 mb-6">
+              <div className="flex items-start space-x-3">
+                <svg className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+                <div>
+                  <h4 className="text-sm font-semibold text-amber-800 dark:text-amber-200 mb-1">
+                    Important Notice
+                  </h4>
+                  <p className="text-sm text-amber-700 dark:text-amber-300">
+                    <strong>Please use your BITSMail account</strong> to sign in to this portal
+                  </p>
+                </div>
+              </div>
             </div>
 
             <button
