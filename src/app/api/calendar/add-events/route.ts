@@ -200,9 +200,11 @@ export async function POST(request: NextRequest) {
 
         const eventStart = new Date(nextOccurrence);
         eventStart.setHours(startTime.hours, startTime.minutes, 0, 0);
+        eventStart.setTime(eventStart.getTime() - (5 * 60 + 30) * 60 * 1000);
 
         const eventEnd = new Date(nextOccurrence);
         eventEnd.setHours(endTime.hours, endTime.minutes, 0, 0);
+        eventEnd.setTime(eventEnd.getTime() - (5 * 60 + 30) * 60 * 1000);
 
         const sanitizedCourseCode = sanitizeString(classSession.course_code);
         const sanitizedCourseName = sanitizeString(classSession.course_name);
@@ -215,11 +217,11 @@ export async function POST(request: NextRequest) {
           location: sanitizedLocation,
           start: {
             dateTime: eventStart.toISOString(),
-            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            timeZone: 'Asia/Kolkata',
           },
           end: {
             dateTime: eventEnd.toISOString(),
-            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            timeZone: 'Asia/Kolkata',
           },
           recurrence: [
             'RRULE:FREQ=WEEKLY;UNTIL=20251130T235959Z',
